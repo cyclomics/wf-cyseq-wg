@@ -4,6 +4,70 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+process SplitReadFilesOnNumberOfReads {
+    container params.containers.seqkit
+    cpus 4
+
+    input:
+        tuple val(sample_id), val(file_id), path(fq)
+
+    output:
+        tuple val(sample_id), val(file_id), path("split/${file_id}_*.fastq")
+
+    script:
+        """
+        seqkit split -j ${task.cpus} -e .gz -s $params.max_fastq_size --by-size-prefix ${file_id}_ -O split $fq
+        gunzip split/*.gz
+        """
+}
+
+process IndexReference {
+    container params.containers.samtools
+    
+    input:
+        path(reference)
+    
+    output:
+        tuple path(reference), path("${reference}.fai")
+
+    script:
+        """
+        samtools faidx $reference
+        """
+}
+
+process PosSortIndexAlignments {
+    container params.containers.samtools
+
+    input:
+        tuple val(sample_id), val(file_id), path(sam)
+
+    output:
+        tuple val(sample_id), val(file_id), path("${file_id}.bam"), path("${file_id}.bam.bai") 
+
+    script:
+        """
+        samtools sort -o ${file_id}.bam $sam
+        samtools index ${file_id}.bam
+        """
+}
+
+process NameSortAlignments {
+    publishDir { "${params.output_dir}/${sample_id}/concatemer_alignments" }, mode: 'copy'
+    container params.containers.samtools
+
+    input:
+        tuple val(sample_id), val(file_id), path(sam)
+
+    output:
+        tuple val(sample_id), val(file_id), path("${file_id}.bam")
+
+    script:
+        """
+        samtools sort -n -o ${file_id}.bam $sam
+        """
+}
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     PROCESSES
