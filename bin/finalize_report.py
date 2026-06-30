@@ -69,7 +69,7 @@ def build_duplication_card(rate: float) -> dict:
     return {
         "name": "Duplication rate",
         "value": f"{rate:.2f}%",
-        "tooltip": "Failed grouped reads divided by total run reads.",
+        "tooltip": "Percentage of consensus reads that were marked as read duplicates based on mapping position.",
     }
 
 
