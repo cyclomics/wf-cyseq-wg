@@ -1,5 +1,3 @@
-include { PosSortIndexAlignments } from './common'
-
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     WORKFLOWS
@@ -9,30 +7,36 @@ workflow align_consensus {
     take:
         consensus_reads
         reference
-        regions
         mode
 
     main:
         Minimap2Align(consensus_reads, reference, mode)
-        PosSortIndexAlignments(Minimap2Align.out)
-        aligned_consensus_bam = PosSortIndexAlignments.out
-
+        aligned_consensus_sam = Minimap2Align.out
 
     emit:
-        aligned_consensus_bam
+        aligned_consensus_sam
 }
 
 
 workflow merge_consensus {
     take:
-        annotated_bam_files
+        sam_files
 
     main:
-        MergeBamFiles(annotated_bam_files)
-        merged_bam = MergeBamFiles.out
+        MergeSamFiles(sam_files)
+        merged_bam = MergeSamFiles.out
+        PosSortIndexAlignments(merged_bam)
+        sorted_bam = PosSortIndexAlignments.out
+        DeduplicateByPosition(merged_bam.combine(sorted_bam, by: [0, 1]))
+        dedup_bam = DeduplicateByPosition.out.map { it -> tuple(it[0], it[1], it[2]) }
+        dedup_metrics = DeduplicateByPosition.out.map { it -> tuple(it[0], it[3]) }
+
 
     emit:
         merged_bam
+        sorted_bam
+        dedup_bam
+        dedup_metrics
 }
 
 /*
@@ -43,8 +47,8 @@ workflow merge_consensus {
 
 process Minimap2Align {
     container params.containers.minimap2
-    cpus 8
-    memory 20.GB
+    cpus 4
+    memory 15.GB
 
     input:
         tuple val(sample_id), val(file_id), path(fq)
@@ -63,20 +67,61 @@ process Minimap2Align {
         """
 }
 
-process MergeBamFiles {
+process MergeSamFiles {
     publishDir { "${params.output_dir}/${sample_id}/consensus_alignments" }, mode: 'copy'
     container params.containers.samtools
+    cpus 1
+    memory 2.GB
 
     input:
-        tuple val(sample_id), val(file_ids), path(bams_in)
+        tuple val(sample_id), val(file_ids), path(sams_in)
 
     output:
-        tuple val(sample_id), val(sample_id), path("${sample_id}.merged.bam"), path("${sample_id}.merged.bam.bai")
+        tuple val(sample_id), val(sample_id), path("${sample_id}.merged.bam")
+
+    script:
+        """
+        samtools merge -O bam -o ${sample_id}.merged.bam \$(find . -name '*.sam')
+        """
+}
+
+process PosSortIndexAlignments {
+    container params.containers.samtools
+    cpus 1
+    memory 100.MB
+
+    input:
+        tuple val(sample_id), val(file_id), path(bam)
+
+    output:
+        tuple val(sample_id), val(file_id), path("${file_id}.bam"), path("${file_id}.bam.bai") 
+
+    script:
+        """
+        samtools sort -o ${file_id}.bam $bam
+        samtools index ${file_id}.bam
+        """
+}
+
+process DeduplicateByPosition {
+    publishDir { "${params.output_dir}/${sample_id}/deduplicate" }, mode: 'copy'
+    container params.containers.cyseqtools
+    cpus 1
+    memory 20.GB
+    
+    input:
+        tuple val(sample_id), val(file_id), path(unsorted_bam), path(sorted_bam), path(sorted_bai)
+
+    output:
+        tuple val(sample_id), val(file_id), path("${file_id}.dedup.bam"), path("metrics/*.yaml")
     
     script:
         """
-        samtools merge -p -c -O bam ${sample_id}.merged.bam \$(find . -name '*.bam')
-        samtools index ${sample_id}.merged.bam
+        cyseqtools deduplicate mapping \
+            -i ${unsorted_bam} \
+            -s ${sorted_bam} \
+            -o ${file_id}.dedup.bam \
+            --metrics-path metrics/
         """
 }
 

@@ -20,7 +20,7 @@ workflow report_live {
             }
 
 
-        ReportStreamData(live_read_metrics)
+        ReportStreamData(live_read_metrics, channel.fromPath(params.report_template).collect())
         live_report = ReportStreamData.out.report
 
     emit:
@@ -32,11 +32,12 @@ workflow report_live {
     PROCESSES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
 process StreamReadMetrics {
+    publishDir { "${params.output_dir}/${sample_id}/report" }, mode: 'copy', overwrite: true
     container params.containers.cyseqtools
     maxForks 1
-    publishDir { "${params.output_dir}/${sample_id}/report" }, mode: 'copy', overwrite: true
+    cpus 1
+    memory 2.GB
 
     input:
         tuple val(sample_id), val(file_id), path(metrics_folder), path(published_folder)
@@ -54,41 +55,53 @@ process StreamReadMetrics {
 }
 
 process ReportStreamData {
-    container params.containers.alnutils
     publishDir "${params.output_dir}", mode: 'copy'
+    container params.containers.alnutils
+    maxForks 1
+    cpus 1
+    memory 2.GB
 
     input:
         tuple val(sample_id), val(file_id),
               path(consensus_cards_yml), path(consensus_yml)
+        path report_template
 
     output:
-        tuple val(sample_id), path("report_${sample_id}.html"), path("report_${sample_id}.json"), emit: report
+        tuple val(sample_id), path("report_${sample_id}*.html"), path("report_${sample_id}.json"), emit: report
 
     script:
+        def absoluteOutputDir = file(params.output_dir).toAbsolutePath()
         """
         report_live.py \
-            --template ${params.report_template} \
-            --output_html report_${sample_id}.html \
-            --output_json report_${sample_id}.json
+            --template ${report_template} \
+            --sample_id ${sample_id} \
+            --epi2me_report ${params.epi2me_report} \
+            --clean_dir "${absoluteOutputDir}"
         """
 }
 
 process FinalizeReport {
-    container params.containers.alnutils
     publishDir "${params.output_dir}", mode: 'copy'
+    container params.containers.alnutils
+    cpus 1
+    memory 4.GB
 
     input:
-        tuple val(sample_id), path(report_html), path(report_json)
+        tuple val(sample_id), path(report_html), path(report_json), path(dedup_yaml)
 
     output:
         path("report_${sample_id}.html")
 
     script:
+        def absoluteOutputDir = file(params.output_dir).toAbsolutePath()
         """
         finalize_report.py \
             --html ${report_html} \
             --json ${report_json} \
-            --output report_${sample_id}.html
+            --yaml ${dedup_yaml} \
+            --sample_id ${sample_id} \
+            --epi2me_report ${params.epi2me_report} \
+            --clean_dir "${absoluteOutputDir}"
         """
 }
 

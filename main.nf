@@ -52,34 +52,35 @@ workflow {
 
     def ch_reference = IndexReference(channel.fromPath(params.reference)).collect()
     def minimap2_mode = params.minimap2.mode
-    def ch_regions = channel.value(file(params.regions)).collect()
 
     // Start ingress workflow
     ingress(read_pattern, stop_pattern)
     raw_fastq = ingress.out.ingested_fastq
 
-    // 1. Consensus
+    // Consensus
     make_consensus(raw_fastq, ch_reference)
-    consensus_fastq = make_consensus.out.consensus_fastq
+    consensus_bam = make_consensus.out.consensus_bam
     consensus_folder = make_consensus.out.consensus_folder
 
-    // 2. Alignment
-    // samtools fastq to transform bam to sam, then minimap2
-    align_consensus(consensus_fastq, ch_reference, ch_regions, minimap2_mode)
-    aligned_consensus_bam = align_consensus.out.aligned_consensus_bam
-
-    // REPORT: Live
+    // Live report
     report_live(
         consensus_folder,
     )
 
-    // 3. Merge all alignments
-    grouped_aligned_consensus_bam = aligned_consensus_bam
+    // Merge all alignments
+    grouped_consensus_bam = consensus_bam
             .groupTuple(by: 0)
-            .map { it -> tuple(it[0], it[1], it[2]) }
 
-    merge_consensus(grouped_aligned_consensus_bam)
-    merged_bam = merge_consensus.out.merged_bam
+    merge_consensus(grouped_consensus_bam)
+    dedup_metrics = merge_consensus.out.dedup_metrics
+
+    // Final report
+    FinalizeReport(
+        report_live.out.live_report
+            .groupTuple(by: 0)
+            .map { sample_id, htmls, jsons -> tuple(sample_id, htmls[-1], jsons[-1]) }
+            .combine(dedup_metrics, by: 0)
+    )
 }
 
 /*

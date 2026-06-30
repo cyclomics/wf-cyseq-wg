@@ -1,8 +1,10 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/cyclomics/wf-cyseq-gw/main/nextflow_schema.json",
-    "title": "cyclomics/wf-cyseq-gw",
-    "description": "CySeq reads.",
+    "$id": "https://raw.githubusercontent.com/cyclomics/wf-cyclomicsseq-amp/main/nextflow_schema.json",
+    "title": "cyclomics/wf-cyclomicsseq-amp",
+    "workflow_title": "CySeq Amplicon",
+    "description": "Variant identification analysis workflow for CySeq amplicon sequencing.",
+    "url": "https://github.com/cyclomics/wf-cyclomicsseq-amp",
     "type": "object",
     "definitions": {
         "input": {
@@ -14,7 +16,6 @@
                 "sample_name": {
                     "title": "Sample name (Optional)",
                     "type": "string",
-                    "default": "",
                     "description": "Override the sample name used in the pipeline.",
                     "help_text": "This option will override automated sample name detection and use the provided value instead."
                 },
@@ -22,29 +23,32 @@
                     "title": "Input read directory",
                     "type": "string",
                     "format": "path",
-                    "default": "",
                     "description": "Folder containing reads in fastq or fastq.gz format, usually the fastq_pass folder made by MinKnow.",
-                    "help_text": "An example whould be /data/sequencing/experiment_name/sample_name/20230213_0900_MN12345_FAA12345_1e411152/fastq_pass \n This folder contains a folder called fastq_pass and a sequencing summary."
+                    "help_text": "An example whould be /data/sequencing/experiment_name/sample_name/20230213_0900_MN12345_FAA12345_1e411152/fastq_pass \n The parent folder contains a folder called fastq_pass and a sequencing summary."
                 },
                 "reference": {
                     "title": "Reference genome FASTA file",
                     "type": "string",
                     "format": "file-path",
-                    "default": "",
                     "description": "Reference genome FASTA.",
                     "help_text": "Reference genome to be used for consensus, alignment and variant calling.\nWe suggest GRCh38.p14, since this has been tested to work with the variant effect prediction API. Please see the README for instructions to obtain this reference genome."
                 },
-                "min_raw_length": {
-                    "title": "Minimum raw read length",
+                "regions": {
+                    "title": "Regions of interest BED file",
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Region of interest, either `auto` or a path to a file in BED format corresponding to the reference used.",
+                    "help_text": "When provided, only locations in the BED file will be examined in the variant identification process. The `auto` strategy automatically selects loci based on read depth."
+                },
+                "target_depth": {
+                    "title": "Target read depth per amplicon (Optional)",
                     "type": "integer",
-                    "default": 500,
-                    "description": "Minimum length of raw reads to be considered for analysis.",
-                    "help_text": "This option will filter out reads that are shorter than the specified length."
+                    "description": "The desired amplicon depth, which will be used to mark the point at which all amplicons reach this value. If not set, then no target depth will be used.",
+                    "help_text": "This option only adjusts the amplicon read depth plot in the report."
                 }
             },
-            "required": ["input_dir", "reference"]
+            "required": ["input_dir", "reference", "regions"]
         },
-
         "output": {
             "title": "Output Options",
             "type": "object",
@@ -52,15 +56,20 @@
             "description": "Parameters for saving and naming workflow outputs",
             "properties": {
                 "output_dir": {
+                    "title": "Output directory name",
                     "type": "string",
                     "default": "output",
                     "format": "directory-path",
-                    "description": "Output directory for all workflow results."
+                    "description": "Name of the output directory for all workflow results. This directory will be saved within a unique run-specific folder."
                 }
             },
             "required": ["output_dir"]
         },
         "advanced": {
+            "title": "Advanced Options",
+            "type": "object",
+            "fa_icon": "fas fa-cogs",
+            "description": "Advanced parameters for fine-tuning workflow behavior.",
             "properties": {
                 "split_fastq_by_size": {
                     "title": "Split FASTQ by size",
@@ -74,12 +83,13 @@
                     "default": 40000,
                     "description": "Maximum number of reads per FASTQ files in the analysis, only used when `split_fastq_by_size` is selected."
                 },
-                "include_fastq_fail": {
-                    "title": "Include fastq_fail",
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Include fastq_fail folder in the analysis.",
-                    "help_text": "This option will include the data in fastq_fail or fail folders in the analysis."
+                "minimap2.mode": {
+                    "title": "Minimap2 mode",
+                    "type": "string",
+                    "enum": ["map-ont"],
+                    "default": "map-ont",
+                    "description": "Minimap2 preset for read mapping.",
+                    "help_text": "The minimap2 preset to be used for raw read mapping. The default is `map-ont`, which is optimized for long ONT reads."
                 },
                 "read_pattern": {
                     "title": "Input read pattern",
@@ -87,8 +97,31 @@
                     "description": "Regular expression for fastq files used in the analysis.",
                     "help_text": "By default the regex looks for the folder pass and fastq_pass. pass is used when rebasecalling data. fastq_pass is created normally by MinKnow.\n You can limit the amount of data by altering this value e.g. by changing it to \n {pass,fastq_pass}/**{1,2}.{fq,fastq,fq.gz,fastq.gz} \n will only take in fastq files ending in 1 and 2.",
                     "default": "**.{fq,fastq,fq.gz,fastq.gz}"
+                },
+                "epi2me_report": {
+                    "title": "Generate timestamped report for EPI2ME",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "If set to true, the real time report will be generated with a timestamp in the filename, suitable for visualization on EPI2ME. If set to false, the report will be generated without a timestamp in the filename, suitable for local visualization."
                 }
             }
+        }
+    },
+    "properties": {
+        "validate_params": {
+            "type": "boolean"
+        }
+    },
+    "resources": {
+        "minimum": {
+            "cpu": 16,
+            "memory": "32 GB",
+            "disk": "50 GB"
+        },
+        "recommended": {
+            "cpu": 32,
+            "memory": "64 GB",
+            "disk": "100 GB"
         }
     }
 }

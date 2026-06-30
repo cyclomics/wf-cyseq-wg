@@ -1,4 +1,14 @@
 .nextflow*
-output/
-test_data/
+output*
+simulation/
 work/
+venv/
+
+.nf-test*
+.vscode
+.logs
+*.log*
+
+**.DS_store
+**.DS_Store
+**.ds_store
