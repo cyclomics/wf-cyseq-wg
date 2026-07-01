@@ -92,8 +92,42 @@
                     "description": "If set to true, the real time report will be generated with a timestamp in the filename, suitable for visualization on EPI2ME. If set to false, the report will be generated without a timestamp in the filename, suitable for local visualization."
                 }
             }
+        },
+        "system": {
+            "title": "System settings",
+            "type": "object",
+            "fa_icon": "fas fa-cogs",
+            "description": "System-level parameters to adjust resource usage behaviour.",
+            "properties": {
+                "executor.cpus": {
+                    "title": "CPUs",
+                    "type": "integer",
+                    "default": 16,
+                    "description": "Total number of CPUs available to the entire workflow to use simultaneously."
+                },
+                "executor.memory": {
+                    "title": "Memory",
+                    "type": "string",
+                    "default": "32 GB",
+                    "description": "Total RAM available to the workflow."
+                }
+            }
         }
     },
+    "allOf": [
+        {
+            "$ref": "#/definitions/input"
+        },
+        {
+            "$ref": "#/definitions/output"
+        },
+        {
+            "$ref": "#/definitions/advanced"
+        },
+        {
+            "$ref": "#/definitions/system"
+        }
+    ],
     "properties": {
         "validate_params": {
             "type": "boolean",
