@@ -97,10 +97,14 @@ def inject_into_html(report_data: dict, html_file: str, output_file: str) -> Non
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", nargs="+", required=True)
-    parser.add_argument("--yaml", required=True)  # CHANGED: single YAML
+    parser.add_argument("--yaml", required=True)
     parser.add_argument("--html", required=True)
     parser.add_argument("--sample_id", required=True)
-    parser.add_argument("--epi2me_report", type=bool, default=False)
+    parser.add_argument(
+        "--epi2me_report",
+        action="store_true",
+        help="Generate timestamped report for EPI2ME",
+    )
     parser.add_argument("--clean_dir", type=str, required=False)
 
     args = parser.parse_args()
