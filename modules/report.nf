@@ -83,12 +83,12 @@ process ReportStreamData {
 
 process FinalizeReport {
     publishDir "${params.output_dir}", mode: 'copy'
-    container params.containers.alnutils
+    container params.containers.cyseqtools
     cpus 1
     memory 4.GB
 
     input:
-        tuple val(sample_id), path(report_html), path(report_json), path(dedup_yaml)
+        tuple val(sample_id), path(report_html), path(report_json), path(metrics)
 
     output:
         path("report_${sample_id}.html")
@@ -100,7 +100,7 @@ process FinalizeReport {
         finalize_report.py \
             --html ${report_html} \
             --json ${report_json} \
-            --yaml ${dedup_yaml} \
+            --metrics_folder ${metrics} \
             --sample_id ${sample_id} \
             ${epiFlag} \
             --clean_dir "${absoluteOutputDir}"
