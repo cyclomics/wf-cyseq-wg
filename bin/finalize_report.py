@@ -9,14 +9,15 @@ import glob
 import json
 import os
 import re
+from pathlib import Path
 from typing import Dict, List
 
-import yaml
+from cyseqtools.consensus.metrics.report import Report
 
 
 def load_report_data(json_file: str) -> dict:
     """Load report data from JSON file."""
-    with open(json_file) as f:
+    with open(json_file, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -40,28 +41,20 @@ def merge_report_fragments(json_paths: List[str]) -> Dict:
     return merged_data
 
 
-def calculate_duplication_rate(yaml_file: str) -> float:
+def calculate_duplication_rate(metrics_folder: Path) -> float:
     """
-    Duplication rate = failed.grouped / run
-
-    YAML format:
-        failed:
-          grouped: int
-        run: int
+    Duplication rate = duplicates / run total
     """
-    with open(yaml_file) as f:
-        data = yaml.safe_load(f) or {}
+    report = Report()
+    report.load_from_path(metrics_folder)
 
-    try:
-        grouped_failed = data["failed"]["grouped"]
-        total_run = data["run"]
-    except KeyError as e:
-        raise ValueError(f"Missing expected key in YAML: {e}")
+    duplicates = report.get_stats("read_duplicates", "duplicated").get("n", 0)
+    total = report.get_stats("read_duplicates", "run").get("n", 0)
 
-    if total_run == 0:
+    if total == 0:
         return 0.0
 
-    return (grouped_failed / total_run) * 100
+    return (duplicates / total) * 100
 
 
 def build_duplication_card(rate: float) -> dict:
@@ -78,7 +71,7 @@ def inject_into_html(report_data: dict, html_file: str, output_file: str) -> Non
     report_data["final"] = True
     json_data = json.dumps(report_data)
 
-    with open(html_file) as f:
+    with open(html_file, encoding="utf-8") as f:
         html = f.read()
 
     html = re.sub(
@@ -90,14 +83,14 @@ def inject_into_html(report_data: dict, html_file: str, output_file: str) -> Non
         flags=re.S,
     )
 
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         f.write(html)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", nargs="+", required=True)
-    parser.add_argument("--yaml", required=True)
+    parser.add_argument("--metrics_folder", required=True)
     parser.add_argument("--html", required=True)
     parser.add_argument("--sample_id", required=True)
     parser.add_argument(
@@ -114,7 +107,7 @@ def main():
 
     # Add duplication card
     try:
-        dup_rate = calculate_duplication_rate(args.yaml)
+        dup_rate = calculate_duplication_rate(Path(args.metrics_folder))
         final_report_data["cards"].append(build_duplication_card(dup_rate))
     except Exception as e:
         print(f"[WARN] Could not compute duplication rate: {e}")

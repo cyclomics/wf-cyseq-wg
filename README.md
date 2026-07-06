@@ -1,16 +1,13 @@
 <p>
-  <img src="assets/logo_named.png" alt="logo" width="200" align="left" />
-  <img src="assets/tagline.png" alt="tagline" width="150" align="right" />
+  <img src="assets/header.png" alt="header"/>
 </p>
-
-<br><br>
 
 # CySeq Whole Genome
 
 This workflow uses concatemeric CySeq reads as input to generate consensus reads in real time, using a whole reference genome as reference.
 
 > <b>Expected use case:</b> <br>
-> This workflow is designed specifically for ONT long-read sequencing reads generated using a CySeq S protocol. This is particularly useful for whole-genome cfDNA or sheared gDNA analyses. The workflow will generate consensus reads using the provided genome as reference, and provide metrics on the resolved DNA inserts.
+> This workflow is designed specifically for ONT long-read sequencing reads generated using a CySeq Short Fragment sequencing kit. This is particularly useful for whole-genome cfDNA or sheared gDNA analyses. The workflow will generate consensus reads using the provided genome as reference, and provide metrics on the resolved DNA inserts.
 
 <details>
   <summary><b>Table of contents</b></summary>
@@ -29,7 +26,8 @@ The following inputs are mandatory:
 
 | Input | Format | Description |
 | ----- | ------ | ----------- |
-| Input data folder | Directory | A MinKnow sequencing output folder containing the `fastq_pass` subfolder, which may optionally contain `barcode` subfolders. This provided output folder is the same folder where MinKnow will write the sequencing summary file, which is necessary to flag the end of the real-time file ingestion. |
+| Sample name | Text | Required for EPI2ME runs only. A descriptive name for your analysis run, relating to the sample being analysed. |
+| Input data folder | Directory | A MinKNOW sequencing output folder containing the `fastq_pass` subfolder, which may optionally contain `barcode` subfolders. This provided output folder is the same folder where MinKNOW will write the sequencing summary file, which is necessary to flag the end of the real-time file ingestion. |
 | Reference genome | FASTA | Any reference genome in FASTA format. |
 
 ## Software requirements
@@ -45,7 +43,7 @@ If you are executing this workflow through [EPI2ME](https://epi2me.nanoporetech.
 
 The workflow expects at least 16 CPUs to be available and 32 GB of RAM. Please ensure you have at least 50 GB of disk space available.
 
-We recommend at least 32 CPUs and 64 GB of RAM to decrease the runtime significantly. Primarily increasing the RAM allocation will allow the workflow to run more demanding processes in parallel, decreasing runtime. To further decrease runtime, allow 20 GB extra RAM for every 8 additional CPUs.
+We recommend at least 64 CPUs and 160 GB of RAM to decrease the runtime significantly. Primarily increasing the RAM allocation will allow the workflow to run more demanding processes in parallel, decreasing runtime. To further decrease runtime, allow 20 GB extra RAM for every 8 additional CPUs.
 
 ## General usage
 

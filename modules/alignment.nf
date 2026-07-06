@@ -104,7 +104,8 @@ process PosSortIndexAlignments {
 }
 
 process DeduplicateByPosition {
-    publishDir { "${params.output_dir}/${sample_id}/deduplicate" }, mode: 'copy'
+    publishDir { "${params.output_dir}/${sample_id}/deduplicate" }, mode: 'copy', pattern: "*.bam"
+    publishDir { "${params.output_dir}/${sample_id}/report" }, mode: 'copy', pattern: "*.read_metrics"
     container params.containers.cyseqtools
     cpus 1
     memory 20.GB
@@ -113,7 +114,7 @@ process DeduplicateByPosition {
         tuple val(sample_id), val(file_id), path(unsorted_bam), path(sorted_bam), path(sorted_bai)
 
     output:
-        tuple val(sample_id), val(file_id), path("${file_id}.dedup.bam"), path("metrics/*.yaml")
+        tuple val(sample_id), val(file_id), path("${file_id}.dedup.bam"), path(".read_metrics")
     
     script:
         """
@@ -121,7 +122,7 @@ process DeduplicateByPosition {
             -i ${unsorted_bam} \
             -s ${sorted_bam} \
             -o ${file_id}.dedup.bam \
-            --metrics-path metrics/
+            --metrics-path .read_metrics
         """
 }
 
