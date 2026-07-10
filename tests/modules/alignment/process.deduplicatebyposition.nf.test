@@ -28,6 +28,14 @@ nextflow_process {
 
             // Merged BAM should be non-empty
             assert path(process.out[0][0][2]).size() > 0
+
+            // Check dedup metrics
+            def metrics_dir = path(process.out[0][0][3])
+            def yaml_file = metrics_dir.resolve("read_duplicates.yaml")
+            assert yaml_file.exists()
+
+            def yaml = yaml_file.yaml
+            assert yaml['run']['success']['ssDNA']['1D']['n'] == 1929
         }
     }
 }

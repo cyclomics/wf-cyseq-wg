@@ -1,0 +1,34 @@
+nextflow_workflow {
+
+    name "Test Workflow merge_consensus"
+    script "modules/alignment.nf"
+    workflow "merge_consensus"
+
+    test("Basic end-to-end consensus workflow wiring") {
+        tag "workflow"
+        tag "unit-test"
+
+        when {
+            workflow {
+                """
+                input[0] = Channel.of([
+                    "sample_1",
+                    ["file01", "file02"],
+                    [file("${projectDir}/tests/data/lambda/consensus/lambda_mut_1.sam"),
+                    file("${projectDir}/tests/data/lambda/consensus/lambda_mut_2.sam")]
+                    ])
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            // Expect the workflow to emit merged_bam and sorted_bam outputs
+            assert workflow.out.merged_bam != null
+            assert workflow.out.sorted_bam != null
+            assert workflow.out.dedup_bam != null
+            assert workflow.out.dedup_metrics != null
+        }
+    }
+
+}
