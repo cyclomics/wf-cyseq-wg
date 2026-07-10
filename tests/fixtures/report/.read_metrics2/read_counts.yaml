@@ -1,0 +1,13 @@
+run:
+  duplicated:
+    'Duplicated: dsDNA': {}
+    'Duplicated: ssDNA': {}
+  failed:
+    'Failed: insufficient data': {}
+    'Failed: no consensus alignment': {}
+    'Failed: unexpected read structure': {}
+  success:
+    dsDNA: {}
+    ssDNA:
+      1D:
+        n: 2000
