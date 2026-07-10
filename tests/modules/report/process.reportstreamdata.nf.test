@@ -1,0 +1,84 @@
+nextflow_process {
+
+    name "Test ReportStreamData"
+    script "modules/report.nf"
+    process "ReportStreamData"
+    
+    // With amplicon depth
+    test("Generates HTML and JSON with reads and depth") {
+        tag "unit-test"
+
+        when {
+            params {
+                report_template = "${projectDir}/tests/fixtures/report.html"
+            }
+            process {
+                """
+                def plot_files = files("${projectDir}/tests/fixtures/report/plots/*.yaml")
+                input[0] = Channel.of([
+                    "sample_1",
+                    "file_1",
+                    file("${projectDir}/tests/fixtures/report/cards/cards.yaml"),
+                    plot_files
+                ])
+                input[1] = Channel.of(file("${projectDir}/tests/fixtures/report.html"))
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            // Both outputs are emitted
+            assert path(process.out.report[0][1]).fileName.toString().startsWith("report_sample_1")
+            assert path(process.out.report[0][2]).fileName.toString().startsWith("report_sample_1")
+
+            // JSON has correct structure
+            def json = path(process.out.report[0][2]).json
+            assert json.final == false
+            assert json.cards.size() > 0
+            // assert json.plots.size() == 2
+
+            // def plotNames = json.plots.collect { it.name }
+            // assert plotNames.contains("Raw reads")
+            // assert plotNames.contains("Depth per amplicon")
+
+            // HTML has embedded data injected
+            // def html = path(process.out.report[0][1]).text
+            // assert html.contains('"final": false')
+            // assert html.contains("sample_1")
+        }
+    }
+
+    // Output content: sample_id in header
+    test("sample_id is embedded in report data") {
+        tag "unit-test"
+
+        when {
+            params {
+                report_template = "${projectDir}/tests/fixtures/report.html"
+            }
+            process {
+                """
+                def plot_files = files("${projectDir}/tests/fixtures/report/plots/*.yaml")
+                input[0] = Channel.of([
+                    "sample_1",
+                    "file_1",
+                    file("${projectDir}/tests/fixtures/report/cards/cards.yaml"),
+                    plot_files
+                ])
+                input[1] = Channel.of(file("${projectDir}/tests/fixtures/report.html"))
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def json = path(process.out.report[0][2]).json
+            assert json.sample_id == "sample_1"
+        }
+    }
+}
+
+

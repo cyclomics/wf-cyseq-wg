@@ -1,0 +1,27 @@
+nextflow_function {
+
+    name "Test report path helper functions"
+    script "modules/report.nf"
+
+    // reportsDir
+    test("reportsDir returns correct base path") {
+        tag "report_functions_1"
+        tag "unit-test"
+        function "reportsDir"
+
+        when {
+            params {
+                output_dir = "/data/output"
+            }
+            function {
+                """
+                input[0] = "sample_1"
+                """
+            }
+        }
+
+        then {
+            assert function.result == "/data/output/sample_1/report"
+        }
+    }
+}
