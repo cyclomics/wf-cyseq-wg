@@ -1,0 +1,119 @@
+nextflow_workflow {
+
+    name "Test Workflow ingress"
+    script "modules/ingress.nf"
+    workflow "ingress"
+
+    test("Input dir with trailing slash") {
+        tag "workflow"
+        tag "integation-test"
+        when {
+            params {
+                input_dir = "${projectDir}/tests/data/example_input/example_sample_name/"
+                split_fastq_by_size = true
+                read_pattern = "**.{fq,fastq,fq.gz,fastq.gz}"
+                stop_pattern = "{seq*,DONE}.txt"
+                sample_name = ""
+            }
+            workflow {
+                def read_pattern = "${params.input_dir}${params.read_pattern}"
+                def stop_pattern = "${params.input_dir}${params.stop_pattern}"
+                """
+                input[0] = "${read_pattern}"
+                input[1] = "${stop_pattern}"
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert workflow.out.ingested_fastq.size() == 2
+        }
+    }
+
+    test("Input dir without trailing slash") {
+        tag "workflow"
+        tag "integation-test"
+        when {
+            params {
+                input_dir = "${projectDir}/tests/data/example_input/example_sample_name"
+                split_fastq_by_size = true
+                read_pattern = "**.{fq,fastq,fq.gz,fastq.gz}"
+                stop_pattern = "{seq*,DONE}.txt"
+                sample_name = ""
+            }
+            workflow {
+                def read_pattern = "${params.input_dir}/${params.read_pattern}"
+                def stop_pattern = "${params.input_dir}/${params.stop_pattern}"
+                """
+                input[0] = "${read_pattern}"
+                input[1] = "${stop_pattern}"
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert workflow.out.ingested_fastq.size() == 2
+        }
+    }
+
+    test("Barcoded sample") {
+        tag "workflow"
+        tag "integation-test"
+        when {
+            params {
+                input_dir = "${projectDir}/tests/data/example_input/example_sample_name_barcoded/"
+                split_fastq_by_size = true
+                read_pattern = "**.{fq,fastq,fq.gz,fastq.gz}"
+                stop_pattern = "{seq*,DONE}.txt"
+                sample_name = ""
+            }
+            workflow {
+                def read_pattern = "${params.input_dir}${params.read_pattern}"
+                def stop_pattern = "${params.input_dir}${params.stop_pattern}"
+                """
+                input[0] = "${read_pattern}"
+                input[1] = "${stop_pattern}"
+                """
+            }
+        }
+        then {
+            assert workflow.success
+            assert workflow.out.ingested_fastq.size() == 3
+            assert workflow.out.ingested_fastq[0][0].startsWith("example_sample_name_barcoded_")
+            assert workflow.out.ingested_fastq[0][0].endsWith("_barcode01")
+            assert workflow.out.ingested_fastq[0][1] == "dummy_001"
+            assert workflow.out.ingested_fastq[0][2].endsWith("dummy_001.fastq.gz")
+        }
+    }
+
+    test("Override sample_name with param") {
+        tag "workflow"
+        tag "integation-test"
+        when {
+            params {
+                input_dir = "${projectDir}/tests/data/example_input/example_sample_name/"
+                split_fastq_by_size = true
+                read_pattern = "**.{fq,fastq,fq.gz,fastq.gz}"
+                stop_pattern = "{seq*,DONE}.txt"
+                sample_name = "CustomSampleName"
+            }
+            workflow {
+                def read_pattern = "${params.input_dir}${params.read_pattern}"
+                def stop_pattern = "${params.input_dir}${params.stop_pattern}"
+                """
+                input[0] = "${read_pattern}"
+                input[1] = "${stop_pattern}"
+                """
+            }
+        }
+        then {
+            assert workflow.success
+            assert workflow.out.ingested_fastq.size() == 2
+            assert workflow.out.ingested_fastq[0][0].startsWith("CustomSampleName_")
+            assert workflow.out.ingested_fastq[0][1] == "dummy01_001"
+            assert workflow.out.ingested_fastq[0][2].endsWith("dummy01_001.fastq.gz")
+        }
+    }
+}
