@@ -72,11 +72,10 @@ workflow ingress {
                 tuple(sample_id, file_name, f)
             }
 
-        if (params.include_fastq_fail == false) {
-            read_fastq = read_fastq.filter { _parent, _sample, f ->
-                !(f.parent.simpleName in exclude_list ||
-                  f.parent?.parent?.simpleName in exclude_list)
-            }
+
+        read_fastq = read_fastq.filter { _parent, _sample, f ->
+            !(f.parent.simpleName in exclude_list ||
+                f.parent?.parent?.simpleName in exclude_list)
         }
 
         if (params.split_fastq_by_size == true) {
