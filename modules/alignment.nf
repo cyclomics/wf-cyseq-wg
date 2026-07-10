@@ -3,21 +3,6 @@
     WORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-workflow align_consensus {
-    take:
-        consensus_reads
-        reference
-        mode
-
-    main:
-        Minimap2Align(consensus_reads, reference, mode)
-        aligned_consensus_sam = Minimap2Align.out
-
-    emit:
-        aligned_consensus_sam
-}
-
-
 workflow merge_consensus {
     take:
         sam_files
@@ -28,15 +13,12 @@ workflow merge_consensus {
         PosSortIndexAlignments(merged_bam)
         sorted_bam = PosSortIndexAlignments.out
         DeduplicateByPosition(merged_bam.combine(sorted_bam, by: [0, 1]))
-        dedup_bam = DeduplicateByPosition.out.map { it -> tuple(it[0], it[1], it[2]) }
-        dedup_metrics = DeduplicateByPosition.out.map { it -> tuple(it[0], it[3]) }
-
 
     emit:
         merged_bam
         sorted_bam
-        dedup_bam
-        dedup_metrics
+        dedup_bam = DeduplicateByPosition.out.map { it -> tuple(it[0], it[1], it[2]) }
+        dedup_metrics = DeduplicateByPosition.out.map { it -> tuple(it[0], it[3]) }
 }
 
 /*

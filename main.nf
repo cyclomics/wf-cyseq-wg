@@ -21,7 +21,6 @@ include {
     } from './modules/common'
 include { make_consensus } from './modules/consensus'
 include {
-    align_consensus;
     merge_consensus;
     } from './modules/alignment'
 include {
