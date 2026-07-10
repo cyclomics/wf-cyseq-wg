@@ -23,8 +23,8 @@ workflow merge_consensus {
         sam_files
 
     main:
-        MergeSamFiles(sam_files)
-        merged_bam = MergeSamFiles.out
+        ConcatSamFiles(sam_files)
+        merged_bam = ConcatSamFiles.out
         PosSortIndexAlignments(merged_bam)
         sorted_bam = PosSortIndexAlignments.out
         DeduplicateByPosition(merged_bam.combine(sorted_bam, by: [0, 1]))
@@ -67,7 +67,7 @@ process Minimap2Align {
         """
 }
 
-process MergeSamFiles {
+process ConcatSamFiles {
     publishDir { "${params.output_dir}/${sample_id}/consensus_alignments" }, mode: 'copy'
     container params.containers.samtools
     cpus 1
@@ -80,12 +80,18 @@ process MergeSamFiles {
         tuple val(sample_id), val(sample_id), path("${sample_id}.merged.bam")
 
     script:
+        def samFiles = sams_in.collect { file -> file.getName() }.join(' ')
         """
-        samtools merge -O bam -o ${sample_id}.merged.bam \$(find . -name '*.sam')
+        for sam in ${samFiles}; do
+            samtools view -b "\$sam" > "\${sam%.sam}.bam"
+        done
+
+        samtools cat -o ${sample_id}.merged.bam *.bam
         """
 }
 
 process PosSortIndexAlignments {
+    publishDir { "${params.output_dir}/${sample_id}/consensus_alignments" }, mode: 'copy'
     container params.containers.samtools
     cpus 1
     memory 100.MB

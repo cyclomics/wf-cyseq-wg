@@ -1,0 +1,33 @@
+nextflow_process {
+
+    name "Test Process DeduplicateByPosition"
+    script "modules/alignment.nf"
+    process "DeduplicateByPosition"
+
+    test("Deduplicates alignments by position") {
+        tag "unit-test"
+
+        when {
+            process {
+                """
+                def bam1 = file("${projectDir}/tests/data/lambda/consensus_alignments/lambda_mut.bam")
+                def bam2 = file("${projectDir}/tests/data/lambda/consensus_alignments/lambda_mut.sorted.bam")
+                def bai2 = file("${projectDir}/tests/data/lambda/consensus_alignments/lambda_mut.sorted.bai")
+
+                input[0] = Channel.of([
+                    "sample_1", "file_1", bam1, bam2, bai2
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            assert path(process.out[0][0][2]).fileName.toString() == "file_1.dedup.bam"
+
+            // Merged BAM should be non-empty
+            assert path(process.out[0][0][2]).size() > 0
+        }
+    }
+}

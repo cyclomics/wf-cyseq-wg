@@ -1,0 +1,60 @@
+nextflow_process {
+
+    name "Test Process ConcatSamFiles"
+    script "modules/alignment.nf"
+    process "ConcatSamFiles"
+
+    test("Concatenates multiple SAM files into one BAM") {
+        tag "unit-test"
+
+        when {
+            process {
+                """
+                def sam1 = file("${projectDir}/tests/data/lambda/lambda_mut.sam")
+                def sam2 = file("${projectDir}/tests/data/lambda/lambda_mut_copy.sam")
+
+                input[0] = Channel.of([
+                    "sample_1",
+                    ["file_1", "file_2"],
+                    [ sam1, sam2 ]
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            // Output is a tuple [sample_id, sample_id, merged.bam]
+            assert process.out[0][0][0] == "sample_1"
+            assert process.out[0][0][1] == "sample_1"
+            assert path(process.out[0][0][2]).fileName.toString() == "sample_1.merged.bam"
+
+            // Merged BAM and BAI should be non-empty
+            assert path(process.out[0][0][2]).size() > 0
+        }
+    }
+
+    test("Handles single SAM file input") {
+        tag "unit-test"
+
+        when {
+            process {
+                """
+                input[0] = Channel.of([
+                    "sample_1",
+                    ["file_1"],
+                    [file("${projectDir}/tests/data/lambda/lambda_mut.sam")]
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            assert path(process.out[0][0][2]).fileName.toString() == "sample_1.merged.bam"
+            assert path(process.out[0][0][2]).size() > 0
+        }
+    }
+}
