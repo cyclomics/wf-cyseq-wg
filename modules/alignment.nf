@@ -44,6 +44,7 @@ process Minimap2Align {
         """
         minimap2 -ax ${mode} \\
             -t ${task.cpus} \\
+            -k15 -w5 -m20 -n3 \\
             $reference \\
             $fq > ${file_id}.sam
         """
@@ -76,7 +77,7 @@ process PosSortIndexAlignments {
     publishDir { "${params.output_dir}/${sample_id}/consensus_alignments" }, mode: 'copy'
     container params.containers.samtools
     cpus 1
-    memory 100.MB
+    memory 5.GB
 
     input:
         tuple val(sample_id), val(file_id), path(bam)

@@ -1,0 +1,5 @@
+# Add nf-test as nextflow code
+*.nf.test linguist-language=Nextflow
+
+# Don't consider docs
+docs/** linguist-documentation

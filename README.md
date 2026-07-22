@@ -80,6 +80,13 @@ We recommend at least 64 CPUs and 160 GB of RAM to decrease the runtime signific
     --reference /path/to/reference.fasta \
     --output_dir /path/to/results
   ```
+
+  If you would like to run first try running this with demo data:
+  ```bash
+  nextflow run cyclomics/wf-cyseq-wg \
+    -profile demo,standard \
+    --output_dir /path/to/results
+  ```
 </details>
 
 ## Troubleshooting
