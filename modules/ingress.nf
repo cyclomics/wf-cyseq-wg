@@ -79,7 +79,7 @@ workflow ingress {
         }
 
         if (params.split_fastq_by_size == true) {
-            log.info "Splitting FASTQ files into chunks of size: ${params.split_size} bytes"
+            log.info "Splitting FASTQ files into chunks of size: ${params.max_fastq_size} bytes"
             ingested_fastq = SplitFastq(read_fastq)
                 .flatMap { sample_id, file_id, file_list ->
                     def files = file_list instanceof List ? file_list : [file_list]
