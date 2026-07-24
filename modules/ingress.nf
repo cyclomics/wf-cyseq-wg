@@ -66,13 +66,14 @@ workflow ingress {
         // Tag samples
         read_fastq = read_fastq_raw
             .filter { _parent_name, file_name, f ->
-                def barcode_folder = f.parent.simpleName
-                barcodePattern.matcher(barcode_folder).matches()
+                !(f.parent.simpleName ==~ /^barcode\d{2,3}$|^unclassified$/) ||
+                f.parent.simpleName ==~ barcodePattern
             }
             .map { _parent_name, file_name, f ->
                 def (barcode, sample_id) = extractSampleInfo(
                     f.parent, invalid_parents, barcodePattern, runFolderPattern
                 )
+
                 sample_id = formatSampleId(sample_id, barcode, RUN_UID)
                 tuple(sample_id, file_name, f)
             }
@@ -254,7 +255,12 @@ def extractSampleInfo(dir, invalidList, barcodePattern, runFolderPattern) {
         barcode = dir.simpleName
     }
 
-    def validParent = findValidParentDir(dir, invalidList, barcodePattern, runFolderPattern)
+    def validParent = findValidParentDir(
+        dir,
+        invalidList,
+        barcodePattern,
+        runFolderPattern
+    )
 
     return [barcode, validParent?.simpleName ?: ""]
 }
