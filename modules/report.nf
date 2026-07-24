@@ -59,7 +59,9 @@ process ReportStreamData {
     container params.containers.alnutils
     maxForks 1
     cpus 1
-    memory 2.GB
+    memory { 2.GB * task.attempt }
+    errorStrategy { task.exitStatus in [137, 140] ? 'retry' : 'finish' }
+    maxRetries 3
 
     input:
         tuple val(sample_id), val(file_id),
@@ -85,7 +87,9 @@ process FinalizeReport {
     publishDir "${params.output_dir}", mode: 'copy'
     container params.containers.cyseqtools
     cpus 1
-    memory 4.GB
+    memory { 4.GB * task.attempt }
+    errorStrategy { task.exitStatus in [137, 140] ? 'retry' : 'finish' }
+    maxRetries 3
 
     input:
         tuple val(sample_id), path(report_html), path(report_json), path(metrics)

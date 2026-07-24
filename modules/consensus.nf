@@ -30,7 +30,9 @@ workflow make_consensus {
 process SamToFastq {
     container params.containers.samtools
     cpus 1
-    memory 50.MB
+    memory { 100.MB * task.attempt }
+    errorStrategy { task.exitStatus in [137, 140] ? 'retry' : 'finish' }
+    maxRetries 3
 
     input:
         tuple val(sample_id), val(file_id), path(sam)
@@ -47,7 +49,9 @@ process SamToFastq {
 process CyseqConsensus {
     publishDir { "${params.output_dir}/${sample_id}/consensus" }, mode: 'copy'
     cpus 8 // cpus = n + 4
-    memory 20.GB
+    memory { 20.GB * task.attempt }
+    errorStrategy { task.exitStatus in [137, 140] ? 'retry' : 'finish' }
+    maxRetries 3
     
     container params.containers.cyseqtools
 
