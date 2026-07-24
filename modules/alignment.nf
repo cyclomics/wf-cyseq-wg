@@ -30,7 +30,9 @@ workflow merge_consensus {
 process Minimap2Align {
     container params.containers.minimap2
     cpus 4
-    memory 15.GB
+    memory { 20.GB * task.attempt }
+    errorStrategy { task.exitStatus in [137, 140] ? 'retry' : 'finish' }
+    maxRetries 3
 
     input:
         tuple val(sample_id), val(file_id), path(fq)
@@ -54,7 +56,9 @@ process ConcatSamFiles {
     publishDir { "${params.output_dir}/${sample_id}/consensus_alignments" }, mode: 'copy'
     container params.containers.samtools
     cpus 1
-    memory 2.GB
+    memory { 2.GB * task.attempt }
+    errorStrategy { task.exitStatus in [137, 140] ? 'retry' : 'finish' }
+    maxRetries 3
 
     input:
         tuple val(sample_id), val(file_ids), path(sams_in)
@@ -77,7 +81,9 @@ process PosSortIndexAlignments {
     publishDir { "${params.output_dir}/${sample_id}/consensus_alignments" }, mode: 'copy'
     container params.containers.samtools
     cpus 1
-    memory 5.GB
+    memory { 5.GB * task.attempt }
+    errorStrategy { task.exitStatus in [137, 140] ? 'retry' : 'finish' }
+    maxRetries 3
 
     input:
         tuple val(sample_id), val(file_id), path(bam)
@@ -97,7 +103,9 @@ process DeduplicateByPosition {
     publishDir { "${params.output_dir}/${sample_id}/report" }, mode: 'copy', pattern: "*.read_metrics"
     container params.containers.cyseqtools
     cpus 1
-    memory 20.GB
+    memory { 5.GB * task.attempt }
+    errorStrategy { task.exitStatus in [137, 140] ? 'retry' : 'finish' }
+    maxRetries 3
     
     input:
         tuple val(sample_id), val(file_id), path(unsorted_bam), path(sorted_bam), path(sorted_bai)

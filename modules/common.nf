@@ -24,7 +24,9 @@ process NameSortAlignments {
     publishDir { "${params.output_dir}/${sample_id}/concatemer_alignments" }, mode: 'copy'
     container params.containers.samtools
     cpus 1
-    memory 1.GB
+    memory { 1.GB * task.attempt }
+    errorStrategy { task.exitStatus in [137, 140] ? 'retry' : 'finish' }
+    maxRetries 3
 
     input:
         tuple val(sample_id), val(file_id), path(sam)
