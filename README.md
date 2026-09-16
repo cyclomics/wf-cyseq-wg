@@ -22,13 +22,15 @@ This workflow uses concatemeric CySeq reads as input to generate consensus reads
 
 ## Input requirements
 
-The following inputs are mandatory:
+The following are the most important inputs:
 
-| Input | Format | Description |
-| ----- | ------ | ----------- |
-| Sample name | Text | Required for EPI2ME runs only. A descriptive name for your analysis run, relating to the sample being analysed. |
-| Input data folder | Directory | A MinKNOW sequencing output folder containing the `fastq_pass` subfolder, which may optionally contain `barcode` subfolders. This provided output folder is the same folder where MinKNOW will write the sequencing summary file, which is necessary to flag the end of the real-time file ingestion. |
-| Reference genome | FASTA | Any reference genome in FASTA format. |
+| Input | Format | Required | Description |
+| ----- | ------ | -------- | ----------- |
+| Sample name | Text | NO in CLI, YES in EPI2ME | Required for EPI2ME runs only. A descriptive name for your analysis run, relating to the sample being analysed. |
+| Input data folder | Directory | YES | A MinKNOW sequencing output folder or any of its subdirectories. Within the directory or its subdirectories, MinKNOW will write the `fastq_pass` subfolder, whcih may optionally contain `barcode` subfolders, and the sequencing summary file, which is necessary to flag the end of the real time file ingestion. |
+| Reference genome | FASTA | YES | Any reference genome in FASTA format. |
+| Barcodes | Text | NO | Comma-delimited list of barcodes to be analysed. In the case of a barcoded run, a list of relevant barcodes may be provided (e.g. `barcode01,barcode02,barcode03`). If no list is provided, all detected barcodes will be analysed. If the run is not barcoded, this argument should not be provided. |
+| Output folder | Directory | NO | The desired output folder name. If the folder does not yet exist, it will be created. Default: `output`. |
 
 ## Software requirements
 
