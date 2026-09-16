@@ -63,7 +63,7 @@ workflow ingress {
             read_fastq_raw = initial_fastq_files.concat(rt_fastq_files)
         }
 
-        def barcodeSpecified = params.barcodes?.trim() ? true : false
+        def barcodesSpecified = params.barcodes?.trim() ? true : false
 
         // Tag samples
         read_fastq = read_fastq_raw
