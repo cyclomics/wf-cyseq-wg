@@ -63,19 +63,29 @@ workflow ingress {
             read_fastq_raw = initial_fastq_files.concat(rt_fastq_files)
         }
 
+        def barcodeSpecified = params.barcodes?.trim() ? true : false
+
         // Tag samples
         read_fastq = read_fastq_raw
-            .filter { _parent_name, file_name, f ->
-                !(f.parent.simpleName ==~ /^barcode\d{2,3}$|^unclassified$/) ||
-                f.parent.simpleName ==~ barcodePattern
-            }
             .map { _parent_name, file_name, f ->
                 def (barcode, sample_id) = extractSampleInfo(
                     f.parent, invalid_parents, barcodePattern, runFolderPattern
                 )
-
-                sample_id = formatSampleId(sample_id, barcode, RUN_UID)
-                tuple(sample_id, file_name, f)
+                tuple(barcode, sample_id, file_name, f)
+            }
+            // Only keep files whose folder matched the requested barcode pattern.
+            // Empty barcode = file wasn't under a barcode folder
+            .filter { barcode, _sample, _fname, _f ->
+                if (barcodesSpecified) {
+                    // user picked specific barcodes.
+                    return barcode != ""
+                }
+                // no selection -> keep everything
+                return true
+            }
+            .map { barcode, sample_id, file_name, f ->
+                def final_id = formatSampleId(sample_id, barcode, RUN_UID)
+                tuple(final_id, file_name, f)
             }
 
 
@@ -221,6 +231,10 @@ def findValidParentDir(dir, invalidList, barcodePattern, runFolderPattern) {
     Returns:
     - The valid parent directory path, or / if no valid parent is found.
     */
+    if (dir == null) {
+        return null
+    }
+
     def folder_name = dir.simpleName
 
     def invalidFolderName = invalidList.contains(folder_name) || 
