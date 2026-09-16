@@ -32,7 +32,7 @@ workflow ingress {
         log.info "Stop filename regex: ${stop_name_pattern}"
 
         // Check if stop signal already exists
-        def stop_pattern_recursive = stop_pattern.toString().replaceFirst(/[^\/]+$/, '**/$0')
+        def stop_pattern_recursive = stop_pattern.toString().replaceFirst(/([^\/]+)$/, '**$1')
         stop_already_exists = !file(stop_pattern_recursive).isEmpty()
 
         if (stop_already_exists) {
