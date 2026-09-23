@@ -23,8 +23,8 @@
                     "title": "Input read directory",
                     "type": "string",
                     "format": "path",
-                    "description": "A MinKNOW sequencing output folder or any of its subdirectories.",
-                    "help_text": "Within the directory or its subdirectories, MinKNOW will write the `fastq_pass` subfolder, whcih may optionally contain `barcode` subfolders, and the sequencing summary file, which is necessary to flag the end of the real time file ingestion."
+                    "description": "A MinKNOW sequencing output folder. Subdirectories of this folder are also allowed, as long as they are ABOVE the 'fastq_pass' subdirectory.",
+                    "help_text": "Within the directory or its subdirectories, MinKNOW will write the fastq_pass subfolder, which may optionally contain barcode subfolders, and the sequencing summary file, which is necessary to flag the end of the real time file ingestion. The workflow monitors this folder continuously and automatically detects newly generated FASTQ files during sequencing. Analysis finishes automatically when the sequencing summary file indicates that sequencing has completed. **Thus, if the user selects any folder below the folder containing** `fastq_pass`**, or** `fastq_pass` **itself, the workflow will not be able to stop searching for new input FASTQ files.** For example, such a folder may be any of the directories in the path: `EXPERIMENT_ID/SAMPLE_ID/SEQUENCING_RUN_OUTPUT/`, where `SEQUENCING_RUN_OUTPUT/` will contain `fastq_pass/`. A `SEQUENCING_RUN_OUTPUT/` folder typically contains the date and flow cell ID and looks something like: `20260908_1627_P2S-02085-B_PBK94934_bee27c37.` If barcoding was enabled during basecalling, barcode subdirectories are detected automatically and analysed separately."
                 },
                 "barcodes": {
                     "title": "Barcodes used in the run",
